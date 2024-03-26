@@ -193,6 +193,18 @@ class MLP(nn.Module):
 #        Discriminator
 ##############################
 
+class MultiDiscriminatorWrapper(nn.Module):
+    def __init__(self, model):
+        super(MultiDiscriminatorWrapper, self).__init__()
+        self.model = model
+
+    def compute_loss(self, x, gt):
+        """Computes the MSE between model output and scalar gt"""
+        loss = sum([torch.mean((out - gt) ** 2) for out in self.forward(x)])
+        return loss
+
+    def forward(self, x):
+        return self.model(x)
 
 class MultiDiscriminator(nn.Module):
     def __init__(self, in_channels=3):

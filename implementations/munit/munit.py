@@ -24,18 +24,18 @@ import torch
 parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
 parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
-parser.add_argument("--dataset_name", type=str, default="edges2shoes", help="name of the dataset")
-parser.add_argument("--batch_size", type=int, default=1, help="size of the batches")
+parser.add_argument("--dataset_name", type=str, default="bitmap2prompt", help="name of the dataset")
+parser.add_argument("--batch_size", type=int, default=16, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--decay_epoch", type=int, default=100, help="epoch from which to start lr decay")
-parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
-parser.add_argument("--img_height", type=int, default=128, help="size of image height")
-parser.add_argument("--img_width", type=int, default=128, help="size of image width")
+parser.add_argument("--n_cpu", type=int, default=16, help="number of cpu threads to use during batch generation")
+parser.add_argument("--img_height", type=int, default=256, help="size of image height")
+parser.add_argument("--img_width", type=int, default=256, help="size of image width")
 parser.add_argument("--channels", type=int, default=3, help="number of image channels")
 parser.add_argument("--sample_interval", type=int, default=400, help="interval saving generator samples")
-parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between saving model checkpoints")
+parser.add_argument("--checkpoint_interval", type=int, default=1, help="interval between saving model checkpoints")
 parser.add_argument("--n_downsample", type=int, default=2, help="number downsampling layers in encoder")
 parser.add_argument("--n_residual", type=int, default=3, help="number of residual blocks in encoder / decoder")
 parser.add_argument("--dim", type=int, default=64, help="number of filters in first encoder layer")
@@ -46,8 +46,8 @@ print(opt)
 cuda = torch.cuda.is_available()
 
 # Create sample and checkpoint directories
-os.makedirs("images/%s" % opt.dataset_name, exist_ok=True)
-os.makedirs("saved_models/%s" % opt.dataset_name, exist_ok=True)
+os.makedirs("/data/result/youzhonghui/cache/cbct-prompt-train/images/%s" % opt.dataset_name, exist_ok=True)
+os.makedirs("/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s" % opt.dataset_name, exist_ok=True)
 
 criterion_recon = torch.nn.L1Loss()
 
@@ -59,23 +59,21 @@ Dec2 = Decoder(dim=opt.dim, n_upsample=opt.n_downsample, n_residual=opt.n_residu
 D1 = MultiDiscriminator()
 D2 = MultiDiscriminator()
 
-if cuda:
-    Enc1 = Enc1.cuda()
-    Dec1 = Dec1.cuda()
-    Enc2 = Enc2.cuda()
-    Dec2 = Dec2.cuda()
-    D1 = D1.cuda()
-    D2 = D2.cuda()
-    criterion_recon.cuda()
+Enc1 = nn.DataParallel(Enc1)
+Dec1 = nn.DataParallel(Dec1)
+Enc2 = nn.DataParallel(Enc2)
+Dec2 = nn.DataParallel(Dec2)
+D1 = MultiDiscriminatorWrapper(nn.DataParallel(D1))
+D2 = MultiDiscriminatorWrapper(nn.DataParallel(D2))
 
 if opt.epoch != 0:
     # Load pretrained models
-    Enc1.load_state_dict(torch.load("saved_models/%s/Enc1_%d.pth" % (opt.dataset_name, opt.epoch)))
-    Dec1.load_state_dict(torch.load("saved_models/%s/Dec1_%d.pth" % (opt.dataset_name, opt.epoch)))
-    Enc2.load_state_dict(torch.load("saved_models/%s/Enc2_%d.pth" % (opt.dataset_name, opt.epoch)))
-    Dec2.load_state_dict(torch.load("saved_models/%s/Dec2_%d.pth" % (opt.dataset_name, opt.epoch)))
-    D1.load_state_dict(torch.load("saved_models/%s/D1_%d.pth" % (opt.dataset_name, opt.epoch)))
-    D2.load_state_dict(torch.load("saved_models/%s/D2_%d.pth" % (opt.dataset_name, opt.epoch)))
+    Enc1.load_state_dict(torch.load("/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/Enc1_%d.pth" % (opt.dataset_name, opt.epoch)))
+    Dec1.load_state_dict(torch.load("/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/Dec1_%d.pth" % (opt.dataset_name, opt.epoch)))
+    Enc2.load_state_dict(torch.load("/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/Enc2_%d.pth" % (opt.dataset_name, opt.epoch)))
+    Dec2.load_state_dict(torch.load("/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/Dec2_%d.pth" % (opt.dataset_name, opt.epoch)))
+    D1.load_state_dict(torch.load("/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/D1_%d.pth" % (opt.dataset_name, opt.epoch)))
+    D2.load_state_dict(torch.load("/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/D2_%d.pth" % (opt.dataset_name, opt.epoch)))
 else:
     # Initialize weights
     Enc1.apply(weights_init_normal)
@@ -84,6 +82,15 @@ else:
     Dec2.apply(weights_init_normal)
     D1.apply(weights_init_normal)
     D2.apply(weights_init_normal)
+
+if cuda:
+    Enc1 = Enc1.cuda()
+    Dec1 = Dec1.cuda()
+    Enc2 = Enc2.cuda()
+    Dec2 = Dec2.cuda()
+    D1 = D1.cuda()
+    D2 = D2.cuda()
+    criterion_recon.cuda()
 
 # Loss weights
 lambda_gan = 1
@@ -122,14 +129,14 @@ transforms_ = [
 ]
 
 dataloader = DataLoader(
-    ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_),
+    ImageDataset("/data/result/youzhonghui/data/cbct_prompt_png", transforms_=transforms_),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 
 val_dataloader = DataLoader(
-    ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_, mode="val"),
+    ImageDataset("/data/result/youzhonghui/data/cbct_prompt_png", transforms_=transforms_, mode="val"),
     batch_size=5,
     shuffle=True,
     num_workers=1,
