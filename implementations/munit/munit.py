@@ -287,9 +287,9 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
     if opt.checkpoint_interval != -1 and epoch % opt.checkpoint_interval == 0:
         # Save model checkpoints
-        torch.save(Enc1.state_dict(), "saved_models/%s/Enc1_%d.pth" % (opt.dataset_name, epoch))
-        torch.save(Dec1.state_dict(), "saved_models/%s/Dec1_%d.pth" % (opt.dataset_name, epoch))
-        torch.save(Enc2.state_dict(), "saved_models/%s/Enc2_%d.pth" % (opt.dataset_name, epoch))
-        torch.save(Dec2.state_dict(), "saved_models/%s/Dec2_%d.pth" % (opt.dataset_name, epoch))
-        torch.save(D1.state_dict(), "saved_models/%s/D1_%d.pth" % (opt.dataset_name, epoch))
-        torch.save(D2.state_dict(), "saved_models/%s/D2_%d.pth" % (opt.dataset_name, epoch))
+        torch.save(Enc1.state_dict(), "/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/Enc1_%d.pth" % (opt.dataset_name, epoch))
+        torch.save(Dec1.state_dict(), "/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/Dec1_%d.pth" % (opt.dataset_name, epoch))
+        torch.save(Enc2.state_dict(), "/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/Enc2_%d.pth" % (opt.dataset_name, epoch))
+        torch.save(Dec2.state_dict(), "/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/Dec2_%d.pth" % (opt.dataset_name, epoch))
+        torch.save(D1.state_dict(), "/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/D1_%d.pth" % (opt.dataset_name, epoch))
+        torch.save(D2.state_dict(), "/data/result/youzhonghui/cache/cbct-prompt-train/saved_models/%s/D2_%d.pth" % (opt.dataset_name, epoch))
