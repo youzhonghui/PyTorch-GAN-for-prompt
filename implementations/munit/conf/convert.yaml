@@ -1,0 +1,13 @@
+encoder: /data/result/youzhonghui/cache/cbct-prompt-train/saved_models/bitmap2prompt/Enc1_28.pth
+decoder: /data/result/youzhonghui/cache/cbct-prompt-train/saved_models/bitmap2prompt/Dec2_28.pth
+
+output: /data/result/youzhonghui/cache/cbct-prompt-train/saved_models/bitmap2prompt/bitmap-prompt-model.jit
+
+dim: 64
+n_downsample: 2
+n_upsample: 2
+n_residual: 3
+style_dim: 8
+
+img_height: 384
+img_width: 384
